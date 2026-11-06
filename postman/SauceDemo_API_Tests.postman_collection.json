@@ -1,0 +1,115 @@
+{
+  "info": {
+    "_postman_id": "saucedemo-api-tests",
+    "name": "SauceDemo API Validation",
+    "description": "API validation suite - asserts status codes, response schema, and JSON integrity for a REST API (using the public ReqRes API for contract validation).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "GET - List Users (status & schema)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('Response has data array', function () { var body = pm.response.json(); pm.expect(body.data).to.be.an('array'); });",
+              "pm.test('First user has valid schema', function () { var body = pm.response.json(); if (body.data.length > 0) { pm.expect(body.data[0]).to.have.property('id'); pm.expect(body.data[0]).to.have.property('email'); } });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://reqres.in/api/users?page=2",
+          "protocol": "https",
+          "host": ["reqres", "in"],
+          "path": ["api", "users"],
+          "query": [{ "key": "page", "value": "2" }]
+        }
+      }
+    },
+    {
+      "name": "POST - Create User (status & JSON integrity)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 201', function () { pm.response.to.have.status(201); });",
+              "pm.test('Response echoes id and createdAt', function () { var body = pm.response.json(); pm.expect(body).to.have.property('id'); pm.expect(body).to.have.property('createdAt'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"name\":\"Subhankar\",\"job\":\"QA Analyst\"}"
+        },
+        "url": {
+          "raw": "https://reqres.in/api/users",
+          "protocol": "https",
+          "host": ["reqres", "in"],
+          "path": ["api", "users"]
+        }
+      }
+    },
+    {
+      "name": "GET - Single User (valid/invalid id)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Valid user returns 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('User object has data', function () { var body = pm.response.json(); pm.expect(body.data).to.have.property('first_name'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://reqres.in/api/users/2",
+          "protocol": "https",
+          "host": ["reqres", "in"],
+          "path": ["api", "users", "2"]
+        }
+      }
+    },
+    {
+      "name": "GET - User Not Found (404)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Missing user returns 404', function () { pm.response.to.have.status(404); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://reqres.in/api/users/99999",
+          "protocol": "https",
+          "host": ["reqres", "in"],
+          "path": ["api", "users", "99999"]
+        }
+      }
+    }
+  ]
+}
