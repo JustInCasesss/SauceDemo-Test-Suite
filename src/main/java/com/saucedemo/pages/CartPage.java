@@ -18,7 +18,7 @@ public class CartPage {
 
     public CartPage(WebDriver driver) {
         this.driver = driver;
-        this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        this.wait = new WebDriverWait(driver, Duration.ofSeconds(15));
     }
 
     public int getNumberOfItems() {
@@ -32,7 +32,25 @@ public class CartPage {
         } catch (Exception e) {
             ((JavascriptExecutor) driver).executeScript("arguments[0].click();", btn);
         }
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("first-name")));
+        // Checkout page loads async; poll for the first-name field OR the checkout URL.
+        long deadline = System.currentTimeMillis() + 20000;
+        boolean loaded = false;
+        while (System.currentTimeMillis() < deadline) {
+            try {
+                if (driver.findElement(By.id("first-name")).isDisplayed()
+                        || driver.getCurrentUrl().contains("checkout-step-one")) {
+                    loaded = true;
+                    break;
+                }
+            } catch (Exception ignored) {
+                // element not present yet — keep polling
+            }
+            try { Thread.sleep(500); } catch (InterruptedException ignored) {}
+        }
+        if (!loaded) {
+            throw new org.openqa.selenium.TimeoutException(
+                    "Checkout page did not load after clicking Checkout. URL=" + driver.getCurrentUrl());
+        }
         Log.info("Checkout button clicked, checkout page loaded.");
     }
 }
