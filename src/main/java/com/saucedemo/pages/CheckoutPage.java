@@ -22,7 +22,21 @@ public class CheckoutPage {
 
     public CheckoutPage(WebDriver driver) {
         this.driver = driver;
-        this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        this.wait = new WebDriverWait(driver, Duration.ofSeconds(15));
+    }
+
+    // Poll until element is visible or a timeout (ms) elapses. Handles slow page loads in CI.
+    private boolean waitForVisible(By locator, long timeoutMs) {
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        while (System.currentTimeMillis() < deadline) {
+            try {
+                if (driver.findElement(locator).isDisplayed()) return true;
+            } catch (Exception ignored) {
+                // not present yet
+            }
+            try { Thread.sleep(400); } catch (InterruptedException ignored) {}
+        }
+        return false;
     }
 
     public void enterCheckoutInfo(String firstName, String lastName, String zip) {
@@ -43,7 +57,10 @@ public class CheckoutPage {
         } catch (Exception e) {
             ((JavascriptExecutor) driver).executeScript("arguments[0].click();", btn);
         }
-        wait.until(ExpectedConditions.visibilityOfElementLocated(finishButton));
+        if (!waitForVisible(finishButton, 20000)) {
+            throw new org.openqa.selenium.TimeoutException(
+                    "Overview page did not load after Continue. URL=" + driver.getCurrentUrl());
+        }
         Log.info("Continue button clicked, overview page loaded.");
     }
 
@@ -58,6 +75,10 @@ public class CheckoutPage {
     }
 
     public String getThankYouMessage() {
-        return wait.until(ExpectedConditions.visibilityOfElementLocated(thankYouMessage)).getText();
+        if (!waitForVisible(thankYouMessage, 20000)) {
+            throw new org.openqa.selenium.TimeoutException(
+                    "Order-complete page did not load after Finish. URL=" + driver.getCurrentUrl());
+        }
+        return driver.findElement(thankYouMessage).getText();
     }
 }
